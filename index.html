@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Tournament</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0f0f0f;color:#f1f1f1;min-height:100vh;font-size:14px}
+:root{
+  --bg0:#0f0f0f;--bg1:#181818;--bg2:#222;--bg3:#2e2e2e;--bg4:#3a3a3a;
+  --border:#333;--border2:#444;
+  --text:#f1f1f1;--muted:#aaa;--dim:#666;
+  --red:#e53935;--red2:#c62828;
+  --gold:#f9a825;--blue:#3ea6ff;--green:#4caf50
+}
+.page{display:none}.page.active{display:block}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px}
+
+/* ── SHARED ── */
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;line-height:1}
+.btn:hover{background:var(--bg4);border-color:#555}
+.btn:active{transform:scale(.98)}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.btn.red:hover{background:var(--red2)}
+.btn.blue{background:#1a3a5c;border-color:var(--blue);color:var(--blue)}
+.btn.blue:hover{background:#1f4a72}
+.btn.gold{background:#3a2e00;border-color:var(--gold);color:var(--gold)}
+.btn.gold:hover{background:#4a3a00}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+input,select{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:13px;outline:none;font-family:inherit;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--blue)}
+input::placeholder{color:var(--dim)}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600}
+.tag.green{background:#1a3a1a;color:var(--green)}
+.tag.red{background:#3a1a1a;color:#ef9a9a}
+.tag.gold{background:#3a2e00;color:var(--gold)}
+
+/* ── SETUP PAGE ── */
+.setup-header{display:flex;align-items:center;gap:12px;padding:20px 0 24px}
+.setup-header h1{font-size:24px;font-weight:700}
+.setup-header p{color:var(--muted);font-size:13px;margin-top:3px}
+.trophy-icon{font-size:36px;line-height:1}
+.section-card{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.section-card h2{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.api-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.api-row input{flex:1;min-width:240px}
+.api-hint{font-size:11px;color:var(--dim);margin-top:7px}
+
+.search-row{display:flex;gap:8px;margin-bottom:12px}
+.search-row input{flex:1}
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;max-height:280px;overflow-y:auto;padding-right:4px}
+.results-grid::-webkit-scrollbar{width:4px}.results-grid::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+.result-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;cursor:pointer;overflow:hidden;transition:border-color .15s,background .15s}
+.result-card:hover{border-color:var(--blue);background:var(--bg3)}
+.result-card img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+.result-card .rc-info{padding:7px 8px}
+.result-card .rc-title{font-size:12px;font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.result-card .rc-ch{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.paste-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.paste-row input{flex:1;min-width:200px}
+
+.entry-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;padding-right:4px}
+.entry-list::-webkit-scrollbar{width:4px}.entry-list::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+.entry-item{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.entry-thumb{width:64px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0;background:var(--bg3)}
+.entry-info{flex:1;min-width:0}
+.entry-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-ch{font-size:11px;color:var(--muted);margin-top:1px}
+.entry-ts{display:flex;align-items:center;gap:4px;margin-top:5px}
+.entry-ts label{font-size:11px;color:var(--dim);white-space:nowrap}
+.entry-ts input{width:70px;padding:4px 7px;font-size:12px}
+.entry-del{background:none;border:none;color:var(--dim);font-size:16px;cursor:pointer;padding:4px;border-radius:4px;flex-shrink:0;line-height:1}
+.entry-del:hover{color:#ef9a9a;background:var(--bg3)}
+.empty-state{text-align:center;padding:28px 16px;color:var(--dim)}
+.empty-state .es-icon{font-size:28px;margin-bottom:8px}
+
+.bracket-controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-top:8px}
+.size-select{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.size-select select{padding:7px 10px}
+.count-pill{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--muted)}
+.count-pill span{color:var(--text);font-weight:600}
+
+/* ── BRACKET PAGE ── */
+.bracket-header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 20px;flex-wrap:wrap;gap:10px}
+.bracket-header h1{font-size:20px;font-weight:700}
+.bracket-scroll{overflow-x:auto;padding-bottom:16px}
+.bracket-tree{display:flex;gap:0;align-items:stretch;min-width:max-content}
+.round-col{display:flex;flex-direction:column;justify-content:space-around;min-width:160px;padding:0 8px;position:relative}
+.round-col::after{content:'';position:absolute;right:0;top:10%;bottom:10%;width:1px;background:var(--border)}
+.round-col:last-child::after{display:none}
+.round-label{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;text-align:center;padding-bottom:8px}
+.bracket-slot{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 9px;margin:4px 0;cursor:default;transition:border-color .2s;display:flex;align-items:center;gap:7px;min-height:46px}
+.bracket-slot.winner{border-color:var(--gold);background:#1e1800}
+.bracket-slot.loser{opacity:.38}
+.bracket-slot.tbd{opacity:.35;border-style:dashed}
+.bs-seed{font-size:10px;color:var(--dim);min-width:14px;text-align:center}
+.bs-thumb{width:36px;height:20px;object-fit:cover;border-radius:3px;flex-shrink:0;background:var(--bg3)}
+.bs-name{font-size:12px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bs-crown{font-size:11px;margin-left:2px}
+
+/* ── VOTE PAGE ── */
+.vote-header{text-align:center;padding:20px 0 8px}
+.vote-header h1{font-size:18px;font-weight:700;color:var(--muted)}
+.vote-header h2{font-size:22px;font-weight:700;margin-top:4px}
+.round-badge{display:inline-block;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:12px;color:var(--muted);margin-top:8px}
+.matchup-progress{text-align:center;font-size:12px;color:var(--dim);margin-bottom:16px}
+.arena{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start}
+@media(max-width:700px){.arena{grid-template-columns:1fr;}.vs-col{display:none}}
+.player-card{background:var(--bg1);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.player-card.voted-winner{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.player-card.voted-loser{opacity:.45}
+.player-top{padding:10px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.player-seed{font-size:11px;color:var(--dim)}
+.player-title{font-size:13px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-ch{font-size:11px;color:var(--muted)}
+.yt-wrap{position:relative;background:#000;aspect-ratio:16/9}
+.yt-wrap iframe{width:100%;height:100%;display:block;border:none}
+.vote-btn-wrap{padding:10px 12px}
+.vote-btn{width:100%;padding:10px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid;transition:background .15s,transform .1s}
+.vote-btn:active{transform:scale(.98)}
+.vote-btn.v-a{background:#1a3a1a;border-color:var(--green);color:var(--green)}
+.vote-btn.v-a:hover{background:#1f4f1f}
+.vote-btn.v-b{background:#1a3a1a;border-color:var(--green);color:var(--green)}
+.vote-btn.v-b:hover{background:#1f4f1f}
+.vote-btn:disabled{opacity:.35;cursor:not-allowed}
+.vs-col{display:flex;align-items:center;justify-content:center;padding-top:60px}
+.vs-text{font-size:28px;font-weight:700;color:var(--dim)}
+.next-row{text-align:center;margin-top:20px}
+.next-row .btn{font-size:14px;padding:11px 28px}
+
+/* ── CHAMPION PAGE ── */
+.champ-wrap{text-align:center;padding:40px 20px}
+.champ-trophy{font-size:64px;margin-bottom:16px}
+.champ-wrap h1{font-size:32px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.champ-wrap h2{font-size:22px;margin-bottom:8px}
+.champ-thumb{width:200px;height:112px;object-fit:cover;border-radius:10px;border:2px solid var(--gold);margin:16px auto;display:block}
+.champ-wrap p{color:var(--muted);font-size:14px;margin-bottom:24px}
+.champ-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ── LOADER ── */
+.loader{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-size:13px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SETUP PAGE ═══════════════ -->
+<div id="pg-setup" class="page active">
+<div class="wrap">
+
+  <div class="setup-header">
+    <div class="trophy-icon">🏆</div>
+    <div>
+      <h1>YouTube Tournament Bracket</h1>
+      <p>Build a playlist, seed the bracket, crown a champion</p>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="section-card">
+    <h2>Search YouTube</h2>
+    <div class="search-row">
+      <input type="text" id="search-input" placeholder="Search for a video…" onkeydown="if(event.key==='Enter')doSearch()">
+      <button class="btn" id="search-btn" onclick="doSearch()">Search</button>
+    </div>
+    <div id="search-results" class="results-grid"></div>
+  </div>
+
+  <!-- Paste URL -->
+  <div class="section-card">
+    <h2>Add by URL</h2>
+    <div class="paste-row">
+      <input type="text" id="url-input" placeholder="https://youtube.com/watch?v=… or youtu.be/…" onkeydown="if(event.key==='Enter')addByUrl()">
+      <button class="btn" onclick="addByUrl()">Add</button>
+    </div>
+  </div>
+
+  <!-- Entry List -->
+  <div class="section-card">
+    <h2>Entries</h2>
+    <div id="entry-list" class="entry-list">
+      <div class="empty-state"><div class="es-icon">🎬</div><div>No entries yet — search or paste a URL above</div></div>
+    </div>
+    <div class="bracket-controls" style="margin-top:14px">
+      <div id="entry-count" class="count-pill">0 entries added</div>
+      <button class="btn red" onclick="generateBracket()" id="gen-btn" disabled>🎲 Generate Bracket</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════ BRACKET PAGE ═══════════════ -->
+<div id="pg-bracket" class="page">
+<div class="wrap">
+  <div class="bracket-header">
+    <div>
+      <h1>🏆 Tournament Bracket</h1>
+      <p style="color:var(--muted);font-size:13px;margin-top:3px" id="bracket-subtitle"></p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="showPage('pg-setup')">← Edit Entries</button>
+      <button class="btn gold" onclick="startVoting()" id="start-vote-btn">▶ Start Voting</button>
+    </div>
+  </div>
+  <div class="bracket-scroll">
+    <div id="bracket-tree" class="bracket-tree"></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════ VOTE PAGE ═══════════════ -->
+<div id="pg-vote" class="page">
+<div class="wrap">
+  <div class="vote-header">
+    <h1 id="round-name">Round of 16</h1>
+    <div class="round-badge" id="match-badge">Match 1 of 8</div>
+  </div>
+  <p class="matchup-progress" id="vote-subtitle"></p>
+
+  <div class="arena">
+    <!-- Player A -->
+    <div class="player-card" id="card-a">
+      <div class="player-top">
+        <span class="player-seed" id="seed-a">#1</span>
+        <div style="flex:1;min-width:0">
+          <div class="player-title" id="title-a">—</div>
+          <div class="player-ch" id="ch-a"></div>
+        </div>
+      </div>
+      <div class="yt-wrap" id="wrap-a"></div>
+      <div class="vote-btn-wrap">
+        <button class="vote-btn v-a" id="vote-a" onclick="castVote(0)">👈 Vote for this</button>
+      </div>
+    </div>
+
+    <!-- VS -->
+    <div class="vs-col"><div class="vs-text">VS</div></div>
+
+    <!-- Player B -->
+    <div class="player-card" id="card-b">
+      <div class="player-top">
+        <span class="player-seed" id="seed-b">#2</span>
+        <div style="flex:1;min-width:0">
+          <div class="player-title" id="title-b">—</div>
+          <div class="player-ch" id="ch-b"></div>
+        </div>
+      </div>
+      <div class="yt-wrap" id="wrap-b"></div>
+      <div class="vote-btn-wrap">
+        <button class="vote-btn v-b" id="vote-b" onclick="castVote(1)">Vote for this 👉</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="next-row" id="next-row" style="display:none">
+    <button class="btn gold" onclick="nextMatchup()" id="next-btn">Next Matchup →</button>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <button class="btn" onclick="showPage('pg-bracket')">← Back to Bracket</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════ CHAMPION PAGE ═══════════════ -->
+<div id="pg-champ" class="page">
+<div class="wrap">
+  <div class="champ-wrap">
+    <div class="champ-trophy">🏆</div>
+    <h1>Champion!</h1>
+    <h2 id="champ-name"></h2>
+    <img id="champ-thumb" class="champ-thumb" src="" alt="">
+    <p id="champ-ch"></p>
+    <div class="champ-actions">
+      <button class="btn gold" onclick="watchChamp()">▶ Watch on YouTube</button>
+      <button class="btn" onclick="showPage('pg-bracket')">View Final Bracket</button>
+      <button class="btn red" onclick="resetAll()">🔄 New Tournament</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<canvas id="confetti-canvas" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999"></canvas>
+<div id="toast" class="toast"></div>
+
+<script>
+// State ------------------------------------------------
+let entries = [];           // {id, title, channel, thumb, startAt}
+let bracket = [];           // array of rounds; each round = array of {a, b, winner}
+let currentRound = 0;
+let currentMatch = 0;
+let players = [];           // YT player instances [playerA, playerB]
+let playerReady = [false, false];
+let votedThisMatch = false;
+
+// Utils ------------------------------------------------
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function toast(msg, dur = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function extractVideoId(url) {
+  try {
+    const u = new URL(url.trim());
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0];
+    return u.searchParams.get('v') || null;
+  } catch { return null; }
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function roundName(totalEntries, roundIdx) {
+  const rounds = Math.log2(totalEntries);
+  const remaining = rounds - roundIdx;
+  if (remaining === 1) return 'Final';
+  if (remaining === 2) return 'Semi-finals';
+  if (remaining === 3) return 'Quarter-finals';
+  return `Round of ${totalEntries / Math.pow(2, roundIdx)}`;
+}
+
+function nextPow2(n) {
+  let p = 1; while (p < n) p *= 2; return p;
+}
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val) { toast('Paste your API key first'); return; }
+  apiKey = val;
+  const el = document.getElementById('api-status');
+  el.textContent = 'Key saved ✓';
+  el.className = 'tag green';
+  toast('API key saved for this session');
+}
+
+// searching on YT ------------------------------------------------
+async function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) { toast('Enter a search term'); return; }
+
+  const btn = document.getElementById('search-btn');
+  btn.innerHTML = '<span class="loader"></span>';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`/api/youtube-search?q=${encodeURIComponent(q)}`);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch {
+      throw new Error('Server returned an unexpected response. Are you running via `netlify dev`?');
+    }
+    if (data.error) throw new Error(data.error);
+    renderResults(data.items || []);
+  } catch(e) {
+    toast('Search error: ' + e.message, 5000);
+  } finally {
+    btn.innerHTML = 'Search';
+    btn.disabled = false;
+  }
+}
+
+function renderResults(items) {
+  const el = document.getElementById('search-results');
+  if (!items.length) { el.innerHTML = '<p style="color:var(--dim);font-size:13px">No results found.</p>'; return; }
+  el.innerHTML = items.map(item => {
+    const id = item.id.videoId;
+    const title = item.snippet.title;
+    const ch = item.snippet.channelTitle;
+    const thumb = item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url;
+    return `<div class="result-card" onclick='addEntry("${id}","${title.replace(/"/g,'&quot;').replace(/'/g,"&#39;")}","${ch.replace(/"/g,'&quot;').replace(/'/g,"&#39;")}","${thumb}")'>
+      <img src="${thumb}" alt="" loading="lazy">
+      <div class="rc-info">
+        <div class="rc-title">${title}</div>
+        <div class="rc-ch">${ch}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// adding video by url ------------------------------------------------
+async function addByUrl() {
+  const raw = document.getElementById('url-input').value.trim();
+  const vid = extractVideoId(raw);
+  if (!vid) { toast('Could not parse a YouTube video ID from that URL'); return; }
+
+  // Try oEmbed for metadata (no API key needed)
+  try {
+    const oe = await fetch(`https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${vid}&format=json`);
+    const d = await oe.json();
+    addEntry(vid, d.title, d.author_name, `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`);
+    document.getElementById('url-input').value = '';
+  } catch {
+    // fallback with minimal info
+    addEntry(vid, 'Video ' + vid, '', `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`);
+    document.getElementById('url-input').value = '';
+  }
+}
+
+// Entry management ------------------------------------------------
+function addEntry(id, title, channel, thumb) {
+  if (entries.find(e => e.id === id)) { toast('That video is already in your list'); return; }
+  entries.push({ id, title, channel, thumb, startAt: 0, endAt: 0 });
+  renderEntries();
+  toast('Added: ' + title.substring(0, 40));
+  document.getElementById('search-results').innerHTML = '';
+}
+
+function removeEntry(idx) {
+  entries.splice(idx, 1);
+  renderEntries();
+}
+
+function updateStartAt(idx, val) {
+  const secs = parseTimeInput(val);
+  entries[idx].startAt = isNaN(secs) ? 0 : secs;
+}
+
+function updateEndAt(idx, val) {
+  const secs = parseTimeInput(val);
+  entries[idx].endAt = isNaN(secs) ? 0 : secs;
+}
+
+function parseTimeInput(val) {
+  val = val.trim();
+  if (/^\d+$/.test(val)) return parseInt(val);
+  const parts = val.split(':').map(Number);
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return 0;
+}
+
+function renderEntries() {
+  const el = document.getElementById('entry-list');
+  const cnt = document.getElementById('entry-count');
+  const genBtn = document.getElementById('gen-btn');
+  const bracketSize = nextPow2(Math.max(entries.length, 2));
+  const byes = bracketSize - entries.length;
+  cnt.innerHTML = `<span>${entries.length}</span> entr${entries.length === 1 ? 'y' : 'ies'} · bracket of <span>${bracketSize}</span>${byes > 0 && entries.length >= 2 ? ` · ${byes} BYE${byes > 1 ? 's' : ''}` : ''}`;
+  genBtn.disabled = entries.length < 2;
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty-state"><div class="es-icon">🎬</div><div>No entries yet — search or paste a URL above</div></div>';
+    return;
+  }
+
+  el.innerHTML = entries.map((e, i) => `
+    <div class="entry-item">
+      <img class="entry-thumb" src="${e.thumb}" alt="" onerror="this.style.visibility='hidden'">
+      <div class="entry-info">
+        <div class="entry-title">${e.title}</div>
+        <div class="entry-ch">${e.channel}</div>
+        <div class="entry-ts">
+          <label>Start:</label>
+          <input type="text" placeholder="0:00" value="${formatTime(e.startAt)}"
+            onchange="updateStartAt(${i}, this.value)" title="Playback start time">
+          <label style="margin-left:6px">End:</label>
+          <input type="text" placeholder="—" value="${e.endAt ? formatTime(e.endAt) : ''}"
+            onchange="updateEndAt(${i}, this.value)" title="Playback end time (leave blank for no limit)">
+        </div>
+      </div>
+      <button class="entry-del" onclick="removeEntry(${i})" title="Remove">✕</button>
+    </div>`).join('');
+}
+
+function formatTime(secs) {
+  if (!secs) return '0:00';
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+// Bracket generation --------------------------------------------
+function generateBracket() {
+  const size = parseInt(document.getElementById('bracket-size').value);
+  if (entries.length < 2) { toast('Add at least 2 entries'); return; }
+
+  // Pad or trim to a power-of-2 size
+  let pool = shuffle(entries);
+  const target = size <= pool.length ? size : nextPow2(pool.length);
+
+  // If we have fewer entries than target, create BYE slots
+  while (pool.length < target) pool.push(null); // null = BYE
+
+  // Build round 1 matchups
+  bracket = [];
+  const r1 = [];
+  for (let i = 0; i < pool.length; i += 2) {
+    const a = pool[i], b = pool[i + 1];
+    // Auto-advance if BYE
+    r1.push({ a, b, winner: b === null ? a : (a === null ? b : null) });
+  }
+  bracket.push(r1);
+
+  // Pre-build empty subsequent rounds
+  let prev = r1;
+  while (prev.length > 1) {
+    const next = [];
+    for (let i = 0; i < prev.length; i += 2) next.push({ a: null, b: null, winner: null });
+    bracket.push(next);
+    prev = next;
+  }
+
+  currentRound = 0;
+  currentMatch = 0;
+
+  document.getElementById('bracket-subtitle').textContent =
+    `${target}-entry bracket · ${Math.log2(target)} rounds`;
+
+  renderBracketTree();
+  showPage('pg-bracket');
+}
+
+// rendering the bracket tree --------------------------------------------
+function renderBracketTree() {
+  const el = document.getElementById('bracket-tree');
+  const total = bracket[0].length * 2;
+
+  el.innerHTML = bracket.map((round, ri) => {
+    const label = roundName(total, ri);
+    const slots = round.map((m, mi) => {
+      const isActive = ri === currentRound && mi === currentMatch && !m.winner;
+      return [
+        slotHtml(m.a, m.winner, ri, mi, 0, isActive),
+        slotHtml(m.b, m.winner, ri, mi, 1, isActive)
+      ].join('');
+    }).join('<div style="height:10px"></div>');
+
+    // Final winner column
+    let champCol = '';
+    if (ri === bracket.length - 1) {
+      const champ = round[0].winner;
+      champCol = `<div class="round-col">
+        <div class="round-label">Champion</div>
+        ${champ
+          ? `<div class="bracket-slot winner"><img class="bs-thumb" src="${champ.thumb}"><span class="bs-name">${champ.title}</span><span class="bs-crown">👑</span></div>`
+          : `<div class="bracket-slot tbd"><span class="bs-name" style="color:var(--dim)">TBD</span></div>`}
+      </div>`;
+    }
+
+    return `<div class="round-col">
+      <div class="round-label">${label}</div>
+      ${slots}
+    </div>${champCol}`;
+  }).join('');
+}
+
+function slotHtml(entry, winner, ri, mi, side, isActive) {
+  if (!entry) {
+    return `<div class="bracket-slot tbd"><span class="bs-name" style="color:var(--dim)">BYE</span></div>`;
+  }
+  let cls = 'bracket-slot';
+  if (winner) {
+    cls += winner.id === entry.id ? ' winner' : ' loser';
+  }
+  if (isActive) cls += ' active-match';
+  const seed = bracket[0].findIndex(m => m.a?.id === entry.id || m.b?.id === entry.id) + 1;
+  return `<div class="${cls}">
+    <span class="bs-seed">#${seed || '?'}</span>
+    <img class="bs-thumb" src="${entry.thumb}" onerror="this.style.visibility='hidden'">
+    <span class="bs-name" title="${entry.title}">${entry.title}</span>
+    ${winner?.id === entry.id ? '<span class="bs-crown">👑</span>' : ''}
+  </div>`;
+}
+
+// voting --------------------------------------------
+function startVoting() {
+  // Find first unresolved match
+  for (let ri = 0; ri < bracket.length; ri++) {
+    for (let mi = 0; mi < bracket[ri].length; mi++) {
+      const m = bracket[ri][mi];
+      if (!m.winner && m.a && m.b) {
+        currentRound = ri;
+        currentMatch = mi;
+        loadMatchup();
+        showPage('pg-vote');
+        return;
+      }
+    }
+  }
+  // All done
+  const champ = bracket[bracket.length - 1][0].winner;
+  if (champ) showChampion(champ);
+  else toast('No unresolved matches found');
+}
+
+function loadMatchup() {
+  const m = bracket[currentRound][currentMatch];
+  const total = bracket[0].length * 2;
+  const roundTotal = bracket[currentRound].length;
+
+  document.getElementById('round-name').textContent = roundName(total, currentRound);
+  document.getElementById('match-badge').textContent =
+    `Match ${currentMatch + 1} of ${roundTotal}`;
+  document.getElementById('vote-subtitle').textContent =
+    `Round ${currentRound + 1} of ${bracket.length}`;
+
+  const a = m.a, b = m.b;
+  const seedA = getSeed(a), seedB = getSeed(b);
+
+  document.getElementById('seed-a').textContent = `#${seedA}`;
+  document.getElementById('title-a').textContent = a.title;
+  document.getElementById('ch-a').textContent = a.channel;
+  document.getElementById('seed-b').textContent = `#${seedB}`;
+  document.getElementById('title-b').textContent = b.title;
+  document.getElementById('ch-b').textContent = b.channel;
+
+  document.getElementById('card-a').className = 'player-card';
+  document.getElementById('card-b').className = 'player-card';
+  document.getElementById('vote-a').disabled = false;
+  document.getElementById('vote-b').disabled = false;
+  document.getElementById('next-row').style.display = 'none';
+  votedThisMatch = false;
+
+  embedPlayer('wrap-a', a.id, a.startAt, a.endAt);
+  embedPlayer('wrap-b', b.id, b.startAt, b.endAt);
+}
+
+function embedPlayer(wrapperId, videoId, startAt, endAt) {
+  const wrap = document.getElementById(wrapperId);
+  const endParam = endAt ? `&end=${endAt}` : '';
+  wrap.innerHTML = `<iframe
+    src="https://www.youtube.com/embed/${videoId}?start=${startAt}${endParam}&enablejsapi=1&rel=0&modestbranding=1"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen></iframe>`;
+}
+
+function getSeed(entry) {
+  if (!entry) return '?';
+  const idx = bracket[0].findIndex(m => m.a?.id === entry.id || m.b?.id === entry.id);
+  return idx + 1;
+}
+
+function castVote(side) {
+  if (votedThisMatch) return;
+  votedThisMatch = true;
+
+  const m = bracket[currentRound][currentMatch];
+  const winner = side === 0 ? m.a : m.b;
+  const loser  = side === 0 ? m.b : m.a;
+  m.winner = winner;
+
+  document.getElementById('card-a').className = 'player-card ' + (side === 0 ? 'voted-winner' : 'voted-loser');
+  document.getElementById('card-b').className = 'player-card ' + (side === 1 ? 'voted-winner' : 'voted-loser');
+  document.getElementById('vote-a').disabled = true;
+  document.getElementById('vote-b').disabled = true;
+
+  // Propagate winner into next round
+  advanceWinner(winner);
+
+  renderBracketTree();
+
+  // Check if tournament is complete
+  const finalMatch = bracket[bracket.length - 1][0];
+  if (finalMatch.winner) {
+    setTimeout(() => showChampion(finalMatch.winner), 900);
+  } else {
+    setTimeout(nextMatchup, 900);
+  }
+}
+
+function advanceWinner(winner) {
+  const nextRound = currentRound + 1;
+  if (nextRound >= bracket.length) return;
+  const nextMatchIdx = Math.floor(currentMatch / 2);
+  const slot = currentMatch % 2 === 0 ? 'a' : 'b';
+  bracket[nextRound][nextMatchIdx][slot] = winner;
+}
+
+function nextMatchup() {
+  // Find next unresolved match (prefer continuing current round first)
+  const rounds = bracket.length;
+  for (let ri = currentRound; ri < rounds; ri++) {
+    const start = ri === currentRound ? currentMatch + 1 : 0;
+    for (let mi = start; mi < bracket[ri].length; mi++) {
+      const m = bracket[ri][mi];
+      if (!m.winner && m.a && m.b) {
+        currentRound = ri;
+        currentMatch = mi;
+        loadMatchup();
+        return;
+      }
+    }
+  }
+  // done
+  const champ = bracket[rounds - 1][0].winner;
+  if (champ) showChampion(champ);
+}
+
+// Champion --------------------------------------------
+function showChampion(entry) {
+  document.getElementById('champ-name').textContent = entry.title;
+  document.getElementById('champ-thumb').src = entry.thumb;
+  document.getElementById('champ-ch').textContent = entry.channel;
+  showPage('pg-champ');
+  launchConfetti();
+}
+
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = 'block';
+
+  const colors = ['#f9a825','#e53935','#3ea6ff','#4caf50','#ce93d8','#ff8a65'];
+  const pieces = Array.from({length: 160}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * -canvas.height,
+    r: 5 + Math.random() * 6,
+    d: 2 + Math.random() * 3,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    tilt: Math.random() * 10 - 5,
+    tiltSpeed: 0.1 + Math.random() * 0.2,
+    angle: 0,
+  }));
+
+  let frame, done = false;
+  const start = performance.now();
+
+  function draw(now) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let allGone = true;
+    pieces.forEach(p => {
+      p.angle += p.tiltSpeed;
+      p.y += p.d;
+      p.tilt = Math.sin(p.angle) * 12;
+      if (p.y < canvas.height + 20) allGone = false;
+      ctx.beginPath();
+      ctx.lineWidth = p.r;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x + p.tilt, p.y);
+      ctx.lineTo(p.x + p.tilt + p.r, p.y + p.r * 2);
+      ctx.stroke();
+    });
+    if (!allGone && now - start < 6000) {
+      frame = requestAnimationFrame(draw);
+    } else {
+      canvas.style.display = 'none';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  frame = requestAnimationFrame(draw);
+}
+
+function watchChamp() {
+  const champ = bracket[bracket.length - 1][0].winner;
+  if (champ) window.open(`https://youtube.com/watch?v=${champ.id}&t=${champ.startAt}`, '_blank');
+}
+
+function resetAll() {
+  entries = [];
+  bracket = [];
+  currentRound = 0;
+  currentMatch = 0;
+  document.getElementById('entry-list').innerHTML =
+    '<div class="empty-state"><div class="es-icon">🎬</div><div>No entries yet — search or paste a URL above</div></div>';
+  document.getElementById('entry-count').innerHTML = '<span>0</span> entries added';
+  document.getElementById('gen-btn').disabled = true;
+  document.getElementById('search-results').innerHTML = '';
+  showPage('pg-setup');
+}
+
+</script>
+</body>
+</html>
