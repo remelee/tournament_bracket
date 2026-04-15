@@ -18,7 +18,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#0f0f0f;color:#f1
 .wrap{max-width:1100px;margin:0 auto;padding:20px 16px}
 
 /* ── SHARED ── */
-.btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;line-height:1}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .btn:hover{background:var(--bg4);border-color:#555}
 .btn:active{transform:scale(.98)}
 .btn.red{background:var(--red);border-color:var(--red);color:#fff}
@@ -89,7 +89,11 @@ input::placeholder{color:var(--dim)}
 .round-badge{display:inline-block;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:12px;color:var(--muted);margin-top:8px}
 .matchup-progress{text-align:center;font-size:12px;color:var(--dim);margin-bottom:16px}
 .arena{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start}
-@media(max-width:700px){.arena{grid-template-columns:1fr}.vs-col{display:none}}
+@media(max-width:700px){
+  .arena{grid-template-columns:1fr;gap:0}
+  .vs-col{padding:8px 0;padding-top:8px}
+  .vs-text{font-size:20px}
+}
 .player-card{background:var(--bg1);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s}
 .player-card.voted-winner{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
 .player-card.voted-loser{opacity:.45}
@@ -100,7 +104,7 @@ input::placeholder{color:var(--dim)}
 .yt-wrap{position:relative;background:#000;aspect-ratio:16/9}
 .yt-wrap iframe{width:100%;height:100%;display:block;border:none}
 .vote-btn-wrap{padding:10px 12px}
-.vote-btn{width:100%;padding:10px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid;transition:background .15s,transform .1s;background:#1a3a1a;border-color:var(--green);color:var(--green)}
+.vote-btn{width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid;transition:background .15s,transform .1s;background:#1a3a1a;border-color:var(--green);color:var(--green);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .vote-btn:hover{background:#1f4f1f}
 .vote-btn:active{transform:scale(.98)}
 .vote-btn:disabled{opacity:.35;cursor:not-allowed}
@@ -117,6 +121,39 @@ input::placeholder{color:var(--dim)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;border:1px solid var(--border2);border-radius:8px;padding:10px 18px;font-size:13px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
+
+/* ── MOBILE ── */
+.bracket-hint{display:none;text-align:center;font-size:11px;color:var(--dim);padding:4px 0 10px;letter-spacing:.3px}
+@media(max-width:600px){
+  /* prevent iOS from zooming in on focused inputs */
+  input{font-size:16px!important}
+  .entry-ts input{width:80px}
+
+  /* setup */
+  .setup-header{padding:14px 0 18px}
+  .setup-header h1{font-size:20px}
+  .results-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));max-height:200px}
+  .entry-list{max-height:none}
+  .entry-del{padding:8px;font-size:18px}
+
+  /* bracket */
+  .bracket-header{flex-direction:column;align-items:flex-start;padding:12px 0 16px}
+  #bracket-actions{width:100%}
+  #bracket-actions .btn{flex:1 1 calc(50% - 4px);justify-content:center}
+  .bracket-hint{display:block}
+
+  /* vote */
+  .player-title{white-space:normal;-webkit-line-clamp:2;line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+  .vote-header{padding:14px 0 6px}
+
+  /* champion */
+  .champ-wrap{padding:24px 12px}
+  .champ-trophy{font-size:48px}
+  .champ-wrap h1{font-size:26px}
+  .champ-wrap h2{font-size:17px}
+  .champ-thumb{width:160px;height:90px}
+  .champ-actions .btn{flex:1 1 calc(50% - 5px);justify-content:center}
+}
 </style>
 </head>
 <body>
@@ -172,11 +209,13 @@ input::placeholder{color:var(--dim)}
       <h1>🏆 Tournament Bracket</h1>
       <p style="color:var(--muted);font-size:13px;margin-top:3px" id="bracket-subtitle"></p>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div id="bracket-actions" style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="showPage('pg-setup')">← Edit Entries</button>
       <button class="btn gold" onclick="startVoting()">▶ Start Voting</button>
+      <button class="btn" id="save-img-btn" onclick="saveBracketImage()">📷 Save Image</button>
     </div>
   </div>
+  <p class="bracket-hint">◁ Swipe to see all rounds ▷</p>
   <div class="bracket-scroll">
     <div id="bracket-tree" class="bracket-tree"></div>
   </div>
@@ -238,12 +277,14 @@ input::placeholder{color:var(--dim)}
     <div class="champ-actions">
       <button class="btn gold" onclick="watchChamp()">▶ Watch on YouTube</button>
       <button class="btn" onclick="showPage('pg-bracket')">View Final Bracket</button>
+      <button class="btn" onclick="showPage('pg-bracket');setTimeout(saveBracketImage,100)">📷 Save Bracket</button>
       <button class="btn red" onclick="resetAll()">🔄 New Tournament</button>
     </div>
   </div>
 </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <canvas id="confetti-canvas" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999"></canvas>
 <div id="toast" class="toast"></div>
 
@@ -288,6 +329,15 @@ function shuffle(arr) {
 
 function nextPow2(n) {
   let p = 1; while (p < n) p *= 2; return p;
+}
+
+// Returns true if the match at (ri, mi) will ever produce a real (non-null) winner.
+// For round 0 this is true iff at least one entry is non-null.
+// For later rounds it recurses into the two source matches.
+function matchCanProduceWinner(ri, mi) {
+  if (ri < 0 || !bracket[ri] || mi < 0 || mi >= bracket[ri].length) return false;
+  if (ri === 0) return bracket[ri][mi].a !== null || bracket[ri][mi].b !== null;
+  return matchCanProduceWinner(ri - 1, 2 * mi) || matchCanProduceWinner(ri - 1, 2 * mi + 1);
 }
 
 function roundName(totalEntries, roundIdx) {
@@ -393,8 +443,8 @@ function renderEntries() {
   const cnt = document.getElementById('entry-count');
   const genBtn = document.getElementById('gen-btn');
   const bracketSize = nextPow2(Math.max(entries.length, 2));
-  const byes = bracketSize - entries.length;
-  cnt.innerHTML = `<span>${entries.length}</span> entr${entries.length === 1 ? 'y' : 'ies'} · bracket of <span>${bracketSize}</span>${byes > 0 && entries.length >= 2 ? ` · ${byes} BYE${byes > 1 ? 's' : ''}` : ''}`;
+  const skips = bracketSize - entries.length;
+  cnt.innerHTML = `<span>${entries.length}</span> entr${entries.length === 1 ? 'y' : 'ies'} · bracket of <span>${bracketSize}</span>${skips > 0 && entries.length >= 2 ? ` · ${skips} skip${skips > 1 ? 's' : ''}` : ''}`;
   genBtn.disabled = entries.length < 2;
   if (!entries.length) {
     el.innerHTML = '<div class="empty-state"><div class="es-icon">🎬</div><div>No entries yet — search or paste a URL above</div></div>';
@@ -420,34 +470,93 @@ function renderEntries() {
 // Bracket generation --------------------------------------------
 function generateBracket() {
   if (entries.length < 2) { toast('Add at least 2 entries'); return; }
-  let pool = shuffle(entries);
+  
+  // 1. Prepare the pool with skips
+  let pool = [...entries]; // Don't shuffle the original array
+  pool = shuffle(pool);
   const target = nextPow2(pool.length);
   while (pool.length < target) pool.push(null);
+
   bracket = [];
+  
+  // 2. Build Round 1 and handle skips immediately
   const r1 = [];
   for (let i = 0; i < pool.length; i += 2) {
-    const a = pool[i], b = pool[i + 1];
-    r1.push({ a, b, winner: b === null ? a : (a === null ? b : null) });
+    const a = pool[i];
+    const b = pool[i + 1];
+    // If one is null, the other is an automatic winner
+    const winner = (a === null) ? b : (b === null ? a : null);
+    r1.push({ a, b, winner });
   }
   bracket.push(r1);
+
+  // 3. Initialize subsequent rounds
   let prev = r1;
   while (prev.length > 1) {
-    const next = [];
-    for (let i = 0; i < prev.length; i += 2) next.push({ a: null, b: null, winner: null });
-    bracket.push(next);
-    prev.forEach((m, mi) => {
-      if (m.winner) {
-        next[Math.floor(mi / 2)][mi % 2 === 0 ? 'a' : 'b'] = m.winner;
+    const nextSize = prev.length / 2;
+    const nextRound = [];
+    for (let i = 0; i < nextSize; i++) {
+      nextRound.push({ a: null, b: null, winner: null });
+    }
+    
+    // 4. Propagate winners from the previous rounds
+    prev.forEach((match, idx) => {
+      if (match.winner) {
+        const nextMatchIdx = Math.floor(idx / 2);
+        const slot = (idx % 2 === 0) ? 'a' : 'b';
+        nextRound[nextMatchIdx][slot] = match.winner;
       }
     });
-    prev = next;
+
+    bracket.push(nextRound);
+    prev = nextRound;
   }
+
+  // 5. Final check: If propagating winners created new skip matches in Round 2+, 
+  // we need to resolve those too. (Crucial for 6-item brackets)
+  resolveAutomaticWinners();
+
   currentRound = 0;
   currentMatch = 0;
-  document.getElementById('bracket-subtitle').textContent =
-    `${target}-entry bracket · ${Math.log2(target)} rounds`;
+  document.getElementById('bracket-subtitle').textContent = 
+    `${entries.length} entries · ${target}-slot bracket`;
   renderBracketTree();
   showPage('pg-bracket');
+}
+
+// Propagate auto-wins through any rounds where one slot will never be filled (permanent skip).
+function resolveAutomaticWinners() {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let ri = 0; ri < bracket.length; ri++) {
+      for (let mi = 0; mi < bracket[ri].length; mi++) {
+        const m = bracket[ri][mi];
+        if (m.winner) continue;
+
+        let autoWinner = null;
+        if (m.a !== null && m.b === null) {
+          // b slot: is null — will it ever be filled?
+          const bWillCome = ri > 0 && matchCanProduceWinner(ri - 1, 2 * mi + 1);
+          if (!bWillCome) autoWinner = m.a;
+        } else if (m.b !== null && m.a === null) {
+          // a slot: is null — will it ever be filled?
+          const aWillCome = ri > 0 && matchCanProduceWinner(ri - 1, 2 * mi);
+          if (!aWillCome) autoWinner = m.b;
+        }
+
+        if (autoWinner) {
+          m.winner = autoWinner;
+          changed = true;
+          if (ri < bracket.length - 1) {
+            const nextMatch = bracket[ri + 1][Math.floor(mi / 2)];
+            const nextSlot = mi % 2 === 0 ? 'a' : 'b';
+            nextMatch[nextSlot] = autoWinner;
+          }
+        }
+      }
+    }
+  }
 }
 
 // rendering the bracket tree --------------------------------------------
@@ -475,7 +584,7 @@ function renderBracketTree() {
 }
 
 function slotHtml(entry, winner) {
-  if (!entry) return `<div class="bracket-slot tbd"><span class="bs-name" style="color:var(--dim)">BYE</span></div>`;
+  if (!entry) return `<div class="bracket-slot tbd"><span class="bs-name" style="color:var(--dim)">skip</span></div>`;
   let cls = 'bracket-slot';
   if (winner) cls += winner.id === entry.id ? ' winner' : ' loser';
   const seed = bracket[0].findIndex(m => m.a?.id === entry.id || m.b?.id === entry.id) + 1;
@@ -545,58 +654,116 @@ function castVote(side) {
   const m = bracket[currentRound][currentMatch];
   const winner = side === 0 ? m.a : m.b;
   m.winner = winner;
+  
   document.getElementById('card-a').className = 'player-card ' + (side === 0 ? 'voted-winner' : 'voted-loser');
   document.getElementById('card-b').className = 'player-card ' + (side === 1 ? 'voted-winner' : 'voted-loser');
   document.getElementById('vote-a').disabled = true;
   document.getElementById('vote-b').disabled = true;
   
-  // Propagate winner into next round
+  // 1. Move winner to the next round
   advanceWinner(winner);
 
+  // 2. Refresh the visual bracket
   renderBracketTree();
 
-  // Check if tournament is complete
-  const finalMatch = bracket[bracket.length - 1][0];
-  if (finalMatch.winner) {
-    setTimeout(() => showChampion(finalMatch.winner), 900);
-  } else {
-    setTimeout(() => {
-      if (!nextMatchup()) {
-        // No ready match found yet — show bracket so user can see state
-        showPage('pg-bracket');
-      }
-    }, 900);
-  }
+  // 3. Move to the next match after a short delay
+  setTimeout(() => {
+    if (!nextMatchup()) {
+      // If nextMatchup returns false, it means we have a champion
+      const finalMatch = bracket[bracket.length - 1][0];
+      if (finalMatch.winner) showChampion(finalMatch.winner);
+    }
+  }, 900);
 }
 
 function advanceWinner(winner) {
-  const nextRound = currentRound + 1;
-  if (nextRound >= bracket.length) return;
-  bracket[nextRound][Math.floor(currentMatch / 2)][currentMatch % 2 === 0 ? 'a' : 'b'] = winner;
-}
+  const nextRoundIdx = currentRound + 1;
+  if (nextRoundIdx >= bracket.length) return;
 
-function nextMatchup() {
-  for (let ri = currentRound; ri < bracket.length; ri++) {
-    const start = ri === currentRound ? currentMatch + 1 : 0;
-    for (let mi = start; mi < bracket[ri].length; mi++) {
-      const m = bracket[ri][mi];
-      if (!m.winner && m.a && m.b) {
-        currentRound = ri; currentMatch = mi;
-        loadMatchup();
-        showPage('pg-vote');
-        return true;
+  const nextMatchIdx = Math.floor(currentMatch / 2);
+  const slot = (currentMatch % 2 === 0) ? 'a' : 'b';
+  
+  // Place winner in the next round slot
+  bracket[nextRoundIdx][nextMatchIdx][slot] = winner;
+
+  // Check if this placement created a new "Auto-Advance" (1 player vs permanent skip)
+  const nextMatch = bracket[nextRoundIdx][nextMatchIdx];
+  if (nextRoundIdx < bracket.length - 1) {
+    if (nextMatch.a && nextMatch.b === null) {
+      // Only auto-advance if b will NEVER be filled (sibling source can't produce a winner)
+      const bSiblingIdx = 2 * nextMatchIdx + 1;
+      if (!matchCanProduceWinner(currentRound, bSiblingIdx)) {
+        nextMatch.winner = nextMatch.a;
+        propagateAutoWinner(nextRoundIdx, nextMatchIdx, nextMatch.a);
+      }
+    } else if (nextMatch.b && nextMatch.a === null) {
+      const aSiblingIdx = 2 * nextMatchIdx;
+      if (!matchCanProduceWinner(currentRound, aSiblingIdx)) {
+        nextMatch.winner = nextMatch.b;
+        propagateAutoWinner(nextRoundIdx, nextMatchIdx, nextMatch.b);
       }
     }
   }
-  const champ = bracket[bracket.length - 1][0].winner;
-  if (champ) { showChampion(champ); return true; }
-  return false;
 }
 
-function showChampion(entry) {
-  document.getElementById('champ-name').textContent = entry.title;
-  document.getElementById('champ-thumb').src = entry.thumb;
-  document.getElementById('champ-ch').textContent = entry.channel;
+function propagateAutoWinner(ri, mi, winner) {
+  const targetRound = ri + 1;
+  if (targetRound >= bracket.length) return;
+  
+  const targetMatch = Math.floor(mi / 2);
+  const slot = (mi % 2 === 0) ? 'a' : 'b';
+  bracket[targetRound][targetMatch][slot] = winner;
+  
+  // Keep moving up if the next round also has a permanent skip on the other side
+  const m = bracket[targetRound][targetMatch];
+  if (targetRound < bracket.length - 1) {
+    if (m.a && m.b === null) {
+      const bSiblingIdx = 2 * targetMatch + 1;
+      if (!matchCanProduceWinner(ri, bSiblingIdx)) {
+        m.winner = m.a;
+        propagateAutoWinner(targetRound, targetMatch, m.a);
+      }
+    } else if (m.b && m.a === null) {
+      const aSiblingIdx = 2 * targetMatch;
+      if (!matchCanProduceWinner(ri, aSiblingIdx)) {
+        m.winner = m.b;
+        propagateAutoWinner(targetRound, targetMatch, m.b);
+      }
+    }
+  }
+}
+
+function nextMatchup() {
+  // Scan through all rounds and matches to find the first one 
+  // that has two real players (a AND b) but no winner yet.
+  for (let ri = 0; ri < bracket.length; ri++) {
+    for (let mi = 0; mi < bracket[ri].length; mi++) {
+      const m = bracket[ri][mi];
+      if (!m.winner && m.a && m.b) {
+        currentRound = ri; 
+        currentMatch = mi;
+        loadMatchup();
+        showPage('pg-vote');
+        return true; 
+      }
+    }
+  }
+  
+  // If we get here, no standard matchups are left. 
+  // Check if the final match is ready to be closed.
+  const final = bracket[bracket.length - 1][0];
+  if (!final.winner && (final.a || final.b)) {
+    // If only one player made it to the final (rare but possible with weird counts)
+    final.winner = final.a || final.b;
+  }
+  
+  return false; 
+}
+
+function showChampion(champ) {
+  document.getElementById('champ-name').textContent = champ.title;
+  document.getElementById('champ-thumb').src = champ.thumb;
+  document.getElementById('champ-ch').textContent = champ.channel;
   showPage('pg-champ');
   launchConfetti();
 }
@@ -637,6 +804,44 @@ function launchConfetti() {
 function watchChamp() {
   const champ = bracket[bracket.length - 1][0].winner;
   if (champ) window.open(`https://youtube.com/watch?v=${champ.id}&t=${champ.startAt}`, '_blank');
+}
+
+async function saveBracketImage() {
+  const btn = document.getElementById('save-img-btn');
+  const actions = document.getElementById('bracket-actions');
+  const wrap = document.querySelector('#pg-bracket .wrap');
+  const scroll = document.querySelector('#pg-bracket .bracket-scroll');
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  actions.style.visibility = 'hidden';
+
+  // Expand clipping so html2canvas sees the full bracket width
+  const prevMaxWidth = wrap.style.maxWidth;
+  const prevOverflow = scroll.style.overflowX;
+  wrap.style.maxWidth = 'none';
+  scroll.style.overflowX = 'visible';
+
+  try {
+    const canvas = await html2canvas(wrap, {
+      backgroundColor: '#0f0f0f',
+      useCORS: true,
+      scale: 2,
+      width: wrap.scrollWidth,
+      height: wrap.scrollHeight,
+      windowWidth: wrap.scrollWidth + 40,
+    });
+    const link = document.createElement('a');
+    link.download = 'bracket.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    toast('Could not save image: ' + e.message, 4000);
+  } finally {
+    wrap.style.maxWidth = prevMaxWidth;
+    scroll.style.overflowX = prevOverflow;
+    actions.style.visibility = '';
+    if (btn) { btn.disabled = false; btn.textContent = '📷 Save Image'; }
+  }
 }
 
 function resetAll() {
